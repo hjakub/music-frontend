@@ -9,6 +9,7 @@ Window {
     visible: true
     title: "Music Player"
     property string currentPlayingUrl: ""
+    property bool isLoopEnabled: false
 
     ListModel { id: songModel }
 
@@ -64,6 +65,7 @@ Window {
                             Text { text: album; color: "#666"; font.pixelSize: 12; elide: Text.ElideRight }
                         }
 
+                        // play + pause button
                         Button {
                             id: playPauseButton
                             text: (currentPlayingUrl === fileUrl &&
@@ -84,7 +86,41 @@ Window {
                                 }
                             }
                         }
+
+                        // loop checkbox
+                        CheckBox {
+                            id: loopCheckBox
+                            text: "Loop"
+                            checked: isLoopEnabled && (currentPlayingUrl === fileUrl)
+                            onClicked: {
+                                isLoopEnabled = checked
+                            }
+                        }
                     }
+                }
+            }
+
+            // seek bar
+            RowLayout {
+                Layout.fillWidth: true
+                anchors.margins: 10
+                spacing: 10
+
+                Slider {
+                    id: seekSlider
+                    Layout.fillWidth: true
+                    from: 0
+                    to: player.duration || 1
+                    value: player.position
+                    onMoved: {
+                        player.position = value
+                    }
+                }
+
+                Label {
+                    id: positionLabel
+                    text: formatTime(player.position)
+                    Layout.alignment: Qt.AlignRight
                 }
             }
 
@@ -93,20 +129,34 @@ Window {
                 audioOutput: AudioOutput { id: output }
                 onSourceChanged: console.log("now playing:", source)
                 onPlaybackStateChanged: console.log("playback state changed to:", playbackState)
+                onPositionChanged: seekSlider.value = position
+                onDurationChanged: seekSlider.to = duration
+                onMediaStatusChanged: {
+                    if (mediaStatus === MediaPlayer.EndOfMedia && isLoopEnabled) {
+                        player.position = 0
+                        player.play()
+                    }
+                }
             }
         }
     }
 
+    function formatTime(ms) {
+        var seconds = Math.floor(ms / 1000)
+        var minutes = Math.floor(seconds / 60)
+        seconds = seconds % 60
+        return minutes + ":" + (seconds < 10 ? "0" + seconds : seconds)
+    }
+
     // autoload songs
     function loadSongs() {
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", "http://localhost:5000/api/songs")
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "http://localhost:5000/api/songs");
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
-                    var songs = JSON.parse(xhr.responseText)
-                    if (songModel)
-                        songModel.clear()
+                    var songs = JSON.parse(xhr.responseText);
+                    songModel.clear();
                     for (var i = 0; i < songs.length; i++) {
                         songModel.append({
                             title: songs[i].title,
@@ -115,14 +165,14 @@ Window {
                             genre: songs[i].genre,
                             year: songs[i].year,
                             fileUrl: songs[i].fileUrl
-                        })
+                        });
                     }
                 } else {
-                    console.log("error loading songs:", xhr.status, xhr.statusText)
+                    console.log("error loading songs:", xhr.status, xhr.statusText);
                 }
             }
-        }
-        xhr.send()
+        };
+        xhr.send();
     }
 
     Component.onCompleted: loadSongs()
