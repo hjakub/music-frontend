@@ -12,6 +12,20 @@ qt_add_executable(appmusic_frontend
     main.cpp
 )
 
+qt_add_resources(appmusic_frontend "Icons"
+    PREFIX "/"
+    FILES
+        icons/close.svg
+        icons/eye.svg
+        icons/infinite.svg
+        icons/pause.svg
+        icons/pencil.svg
+        icons/play.svg
+        icons/refresh.svg
+        icons/search.svg
+        icons/trash.svg
+)
+
 qt_add_qml_module(appmusic_frontend
     URI music_frontend
     VERSION 1.0

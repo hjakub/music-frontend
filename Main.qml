@@ -3,14 +3,17 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 import QtMultimedia
+import QtQuick.Controls.Material
 
-Window {
+ApplicationWindow {
     width: 900
     height: 550
     visible: true
     title: "Music Player"
+    Material.theme: Material.Dark
+    Material.accent: Material.Blue
     minimumWidth: 600
-    minimumHeight: 500
+    minimumHeight: 550
     property string currentPlayingUrl: ""
     property bool isLoopEnabled: false
 
@@ -27,7 +30,7 @@ Window {
         Rectangle {
             width: parent ? parent.width : 900
             height: parent ? parent.height : 550
-            color: "#f9f9f9"
+            color: Material.background
 
             ColumnLayout {
                 anchors.fill: parent
@@ -37,7 +40,8 @@ Window {
                 Label {
                     text: "Music Library"
                     font.bold: true
-                    font.pointSize: 16
+                    font.pointSize: 18
+                    color: Material.foreground
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -47,7 +51,13 @@ Window {
 
                     Button {
                         text: "+ Add new track"
+                        icon.source: "qrc:/icons/plus.svg"
                         Layout.fillWidth: true
+                        implicitHeight: 44
+                        background: Rectangle {
+                            radius: 4
+                            color: "#333"
+                        }
                         onClicked: {
                             titleField.text = ""
                             albumField.text = ""
@@ -61,17 +71,31 @@ Window {
                     }
 
                     Button {
+                        id: refreshButton
+                        icon.source: "qrc:/icons/refresh.svg"
                         text: "Refresh"
-                        Layout.preferredWidth: 100
+                        implicitHeight: 44
+                        Layout.preferredWidth: 140
+                        background: Rectangle {
+                            radius: 4
+                            color: "#333"
+                        }
                         onClicked: loadSongs()
                     }
 
-                    CheckBox {
-                        id: globalLoop
+                    Button {
+                        id: loopButton
+                        icon.source: "qrc:/icons/infinite.svg"
                         text: "Loop"
-                        checked: isLoopEnabled
-                        onClicked: isLoopEnabled = checked
-                        Layout.preferredWidth: 140
+                        implicitHeight: 44
+                        Layout.preferredWidth: refreshButton.Layout.preferredWidth
+                        background: Rectangle {
+                            radius: 4
+                            color: isLoopEnabled ? Material.color(Material.Blue) : "#333"
+                        }
+                        onClicked: {
+                            isLoopEnabled = !isLoopEnabled
+                        }
                     }
                 }
 
@@ -81,18 +105,33 @@ Window {
 
                     TextField {
                         id: searchField
-                        placeholderText: "Search.."
+                        placeholderText: "Search songs.."
+                        implicitHeight: 44
                         Layout.fillWidth: true
                         onAccepted: searchSongs()
                     }
 
                     Button {
+                        icon.source: "qrc:/icons/search.svg"
                         text: "Search"
+                        implicitHeight: 44
+                        Layout.preferredWidth: 140
+                        background: Rectangle {
+                            radius: 4
+                            color: "#333"
+                        }
                         onClicked: searchSongs()
                     }
 
                     Button {
+                        icon.source: "qrc:/icons/close.svg"
                         text: "Clear"
+                        implicitHeight: 44
+                        Layout.preferredWidth: 140
+                        background: Rectangle {
+                            radius: 4
+                            color: "#333"
+                        }
                         onClicked: {
                             searchField.text = ""
                             loadSongs()
@@ -105,15 +144,17 @@ Window {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
+                    spacing: 10
                     model: songModel
+
                     delegate: Rectangle {
                         width: listView.width
                         height: 160
                         color: player.source === fileUrl
-                               ? "#d0ebff"
-                               : index % 2 === 0 ? "#f0f0f0" : "#ffffff"
-                        border.width: 1
-                        border.color: "#ccc"
+                               ? Material.color(Material.Blue, Material.Shade700)
+                               : (index % 2 === 0 ? "#1e1e1e" : Material.background)
+                        border.color: "#666"
+                        radius: 4
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -123,45 +164,31 @@ Window {
                             Text {
                                 text: title
                                 font.bold: true
-                                font.pointSize: 14
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
+                                font.pointSize: 15
+                                color: Material.foreground
                             }
 
-                            Text {
-                                text: "Album: " + (album || "Unknown")
-                                color: "#444"
-                                font.pixelSize: 12
-                                Layout.fillWidth: true
-                            }
-
-                            Text {
-                                text: "Artist: " + (artistName || "Unknown")
-                                color: "#444"
-                                font.pixelSize: 12
-                                Layout.fillWidth: true
-                            }
-
-                            Text {
-                                text: "Year: " + (year || "Unknown")
-                                color: "#444"
-                                font.pixelSize: 12
-                                Layout.fillWidth: true
-                            }
+                            Text { text: "Album: " + (album || "Unknown"); color: "#afafaf" }
+                            Text { text: "Artist: " + (artistName || "Unknown"); color: "#afafaf" }
+                            Text { text: "Year: " + (year || "Unknown"); color: "#afafaf" }
 
                             RowLayout {
                                 Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignLeft
-                                spacing: 10
-
-                                property int buttonWidth: 100
+                                spacing: 8
+                                property int buttonSize: 44
 
                                 Button {
-                                    text: (currentPlayingUrl === fileUrl &&
-                                           player.playbackState === MediaPlayer.PlayingState)
-                                           ? "Pause" : "Play"
                                     visible: fileUrl && fileUrl !== ""
-                                    Layout.preferredWidth: parent.buttonWidth
+                                    icon.source: (currentPlayingUrl === fileUrl &&
+                                                  player.playbackState === MediaPlayer.PlayingState)
+                                                 ? "qrc:/icons/pause.svg"
+                                                 : "qrc:/icons/play.svg"
+                                    Layout.preferredWidth: parent.buttonSize
+                                    Layout.preferredHeight: parent.buttonSize
+                                    background: Rectangle {
+                                        radius: 4
+                                        color: "#333"
+                                    }
                                     onClicked: {
                                         if (currentPlayingUrl !== fileUrl) {
                                             currentPlayingUrl = fileUrl
@@ -177,8 +204,13 @@ Window {
                                 }
 
                                 Button {
-                                    text: "Edit"
-                                    Layout.preferredWidth: parent.buttonWidth
+                                    icon.source: "qrc:/icons/pencil.svg"
+                                    Layout.preferredWidth: parent.buttonSize
+                                    Layout.preferredHeight: parent.buttonSize
+                                    background: Rectangle {
+                                        radius: 4
+                                        color: "#333"
+                                    }
                                     onClicked: {
                                         if (_id && title && album && genre && year) {
                                             editDialog.songId = _id;
@@ -192,8 +224,13 @@ Window {
                                 }
 
                                 Button {
-                                    text: "Delete"
-                                    Layout.preferredWidth: parent.buttonWidth
+                                    icon.source: "qrc:/icons/trash.svg"
+                                    Layout.preferredWidth: parent.buttonSize
+                                    Layout.preferredHeight: parent.buttonSize
+                                    background: Rectangle {
+                                        radius: 4
+                                        color: "#333"
+                                    }
                                     onClicked: {
                                         confirmDeleteDialog.songId = _id
                                         confirmDeleteDialog.open()
@@ -201,8 +238,13 @@ Window {
                                 }
 
                                 Button {
-                                    text: "Details"
-                                    Layout.preferredWidth: parent.buttonWidth
+                                    icon.source: "qrc:/icons/eye.svg"
+                                    Layout.preferredWidth: parent.buttonSize
+                                    Layout.preferredHeight: parent.buttonSize
+                                    background: Rectangle {
+                                        radius: 4
+                                        color: "#333"
+                                    }
                                     onClicked: {
                                         stackView.push(detailsPage, {
                                             songTitle: title,
@@ -221,6 +263,7 @@ Window {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 10
+
                     Slider {
                         id: seekSlider
                         Layout.fillWidth: true
@@ -229,9 +272,10 @@ Window {
                         value: player.position
                         onMoved: player.position = value
                     }
+
                     Label {
                         text: formatTime(player.position)
-                        Layout.alignment: Qt.AlignRight
+                        color: Material.foreground
                     }
                 }
             }
@@ -325,7 +369,7 @@ Window {
         id: detailsPage
         Rectangle {
             anchors.fill: parent
-            color: "#f9f9f9"
+            color: Material.background
 
             ColumnLayout {
                 anchors.fill: parent
@@ -336,20 +380,25 @@ Window {
                     text: "Song Details"
                     font.bold: true
                     font.pointSize: 18
+                    color: Material.foreground
                     Layout.alignment: Qt.AlignHCenter
                 }
 
-                Text { text: "Title: " + songTitle; font.pixelSize: 14 }
-                Text { text: "Album: " + songAlbum; font.pixelSize: 14 }
-                Text { text: "Artist: " + songArtist; font.pixelSize: 14 }
-                Text { text: "Genre: " + songGenre; font.pixelSize: 14 }
-                Text { text: "Year: " + songYear; font.pixelSize: 14 }
+                Text { text: "Title: " + songTitle; font.pixelSize: 14; color: "#ccc" }
+                Text { text: "Album: " + songAlbum; font.pixelSize: 14; color: "#ccc" }
+                Text { text: "Artist: " + songArtist; font.pixelSize: 14; color: "#ccc" }
+                Text { text: "Genre: " + songGenre; font.pixelSize: 14; color: "#ccc" }
+                Text { text: "Year: " + songYear; font.pixelSize: 14; color: "#ccc" }
 
                 Item { Layout.fillHeight: true }
 
                 Button {
                     text: "Back to Music Library"
                     Layout.alignment: Qt.AlignHCenter
+                    background: Rectangle {
+                        radius: 4
+                        color: "#333"
+                    }
                     onClicked: stackView.pop()
                 }
             }
@@ -369,19 +418,19 @@ Window {
         modal: true
         width: 550
         height: 550
-        standardButtons: Dialog.Ok | Dialog.Cancel
-
         property string selectedFilePath: ""
         property string selectedArtistId: ""
         property bool isAddingArtist: false
+        standardButtons: Dialog.Ok | Dialog.Cancel
         ListModel { id: artistModel }
 
         ScrollView {
+            id: addScroll
             anchors.fill: parent
             ColumnLayout {
                 anchors.margins: 16
                 spacing: 10
-                width: parent.width - 20
+                width: addScroll.availableWidth
 
                 TextField { id: titleField; placeholderText: "Song title"; Layout.fillWidth: true }
                 TextField { id: albumField; placeholderText: "Album"; Layout.fillWidth: true }
@@ -480,11 +529,12 @@ Window {
         property alias editYearField: internalEditYearField
 
         ScrollView {
+            id: editScroll
             anchors.fill: parent
             ColumnLayout {
                 anchors.margins: 16
                 spacing: 10
-                width: parent.width - 20
+                width: editScroll.availableWidth
 
                 TextField { id: internalEditTitleField; placeholderText: "Song title"; Layout.fillWidth: true }
                 TextField { id: internalEditAlbumField; placeholderText: "Album"; Layout.fillWidth: true }
@@ -512,7 +562,6 @@ Window {
         }
     }
 
-    // dialog - delete track
     MessageDialog {
         id: confirmDeleteDialog
         title: "Delete track"
