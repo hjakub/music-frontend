@@ -50,7 +50,7 @@ ApplicationWindow {
                     spacing: 10
 
                     Button {
-                        text: "+ Add new track"
+                        text: "Add new track"
                         icon.source: "qrc:/icons/plus.svg"
                         Layout.fillWidth: true
                         implicitHeight: 44
@@ -108,7 +108,6 @@ ApplicationWindow {
                         placeholderText: "Search songs.."
                         implicitHeight: 44
                         Layout.fillWidth: true
-                        onAccepted: searchSongs()
                     }
 
                     Button {
@@ -308,7 +307,7 @@ ApplicationWindow {
                 return minutes + ":" + (seconds < 10 ? "0" + seconds : seconds)
             }
 
-            Component.onCompleted: loadSongs()
+            Component.onCompleted: Qt.callLater(loadSongs)
 
             // autoload songs
             function loadSongs() {

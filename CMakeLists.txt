@@ -21,6 +21,7 @@ qt_add_resources(appmusic_frontend "Icons"
         icons/pause.svg
         icons/pencil.svg
         icons/play.svg
+        icons/plus.svg
         icons/refresh.svg
         icons/search.svg
         icons/trash.svg
