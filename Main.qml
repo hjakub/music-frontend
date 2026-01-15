@@ -16,6 +16,7 @@ ApplicationWindow {
     minimumHeight: 550
     property string currentPlayingUrl: ""
     property bool isLoopEnabled: false
+    property string apiBaseUrl: "https://music-backend-42k7.onrender.com"
 
     ListModel { id: songModel }
 
@@ -312,7 +313,7 @@ ApplicationWindow {
             // autoload songs
             function loadSongs() {
                 var xhr = new XMLHttpRequest()
-                xhr.open("GET", "http://localhost:5000/api/songs")
+                xhr.open("GET", apiBaseUrl + "/api/songs")
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         if (xhr.status === 200) {
@@ -346,7 +347,7 @@ ApplicationWindow {
                 }
 
                 var xhr = new XMLHttpRequest()
-                xhr.open("GET", "http://localhost:5000/api/songs/search/" + encodeURIComponent(query))
+                xhr.open("GET", apiBaseUrl + "/api/songs/search/" + encodeURIComponent(query))
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         if (xhr.status === 200) {
@@ -525,7 +526,7 @@ ApplicationWindow {
 
             if (addDialog.isAddingArtist) {
                 var xhr = new XMLHttpRequest()
-                xhr.open("POST", "http://localhost:5000/api/artists")
+                xhr.open("POST", apiBaseUrl + "/api/artists")
                 xhr.setRequestHeader("Content-Type", "application/json")
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 201) {
@@ -649,7 +650,7 @@ ApplicationWindow {
 
         function sendEditRequest(finalArtistId) {
             var xhr = new XMLHttpRequest()
-            xhr.open("PUT", "http://localhost:5000/api/songs/" + songId)
+            xhr.open("PUT", apiBaseUrl + "/api/songs/" + songId)
             xhr.setRequestHeader("Content-Type", "application/json")
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -674,7 +675,7 @@ ApplicationWindow {
             editDialog.newArtistGenreEdit = ""
 
             var xhr = new XMLHttpRequest()
-            xhr.open("GET", "http://localhost:5000/api/artists")
+            xhr.open("GET", apiBaseUrl + "/api/artists")
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                     var artists = JSON.parse(xhr.responseText)
@@ -725,7 +726,7 @@ ApplicationWindow {
 
             if (editDialog.isAddingArtist) {
                 var xhrArtist = new XMLHttpRequest()
-                xhrArtist.open("POST", "http://localhost:5000/api/artists")
+                xhrArtist.open("POST", apiBaseUrl + "/api/artists")
                 xhrArtist.setRequestHeader("Content-Type", "application/json")
                 xhrArtist.onreadystatechange = function() {
                     if (xhrArtist.readyState === XMLHttpRequest.DONE && xhrArtist.status === 201) {
@@ -754,7 +755,7 @@ ApplicationWindow {
 
         onAccepted: {
             var xhr = new XMLHttpRequest()
-            xhr.open("DELETE", "http://localhost:5000/api/songs/" + songId)
+            xhr.open("DELETE", apiBaseUrl + "/api/songs/" + songId)
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                     if (stackView.currentItem && stackView.currentItem.loadSongs)
@@ -767,7 +768,7 @@ ApplicationWindow {
 
     function loadArtists() {
         var xhr = new XMLHttpRequest()
-        xhr.open("GET", "http://localhost:5000/api/artists")
+        xhr.open("GET", apiBaseUrl + "/api/artists")
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 var artists = JSON.parse(xhr.responseText)
@@ -782,7 +783,7 @@ ApplicationWindow {
 
     function uploadSong(artistId) {
         var xhr = new XMLHttpRequest()
-        xhr.open("POST", "http://localhost:5000/api/songs")
+        xhr.open("POST", apiBaseUrl + "/api/songs")
         xhr.setRequestHeader("Content-Type", "application/json")
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 201) {
@@ -802,7 +803,7 @@ ApplicationWindow {
 
     function addNewArtistAndSong() {
         var xhr = new XMLHttpRequest()
-        xhr.open("POST", "http://localhost:5000/api/artists")
+        xhr.open("POST", apiBaseUrl + "/api/artists")
         xhr.setRequestHeader("Content-Type", "application/json")
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 201) {

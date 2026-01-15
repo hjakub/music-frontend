@@ -53,7 +53,7 @@ void SongUploader::uploadSong(const QString &filePath,
     addField("artistId", artistId);
 
     // post request to backend
-    QNetworkRequest request(QUrl("http://localhost:5000/api/songs/upload"));
+    QNetworkRequest request(QUrl("http://music-backend-42k7.onrender.com/api/songs/upload"));
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     QNetworkReply *reply = manager->post(request, multiPart);
     multiPart->setParent(reply);
