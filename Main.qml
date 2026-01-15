@@ -212,12 +212,13 @@ ApplicationWindow {
                                         color: "#333"
                                     }
                                     onClicked: {
-                                        if (_id && title && album && genre && year) {
+                                        if (_id) {
                                             editDialog.songId = _id;
-                                            editDialog.editTitleField.text = title;
-                                            editDialog.editAlbumField.text = album;
-                                            editDialog.editGenreField.text = genre;
-                                            editDialog.editYearField.text = year;
+                                            editDialog.editTitleField.text = title || "";
+                                            editDialog.editAlbumField.text = album || "";
+                                            editDialog.editGenreField.text = genre || "";
+                                            editDialog.editYearField.text = year || "";
+                                            editDialog.selectedArtistId = artistId || "";
                                             editDialog.open();
                                         }
                                     }
@@ -314,13 +315,13 @@ ApplicationWindow {
                             for (var i = 0; i < songs.length; i++) {
                                 songModel.append({
                                     _id: songs[i]._id,
-                                    title: songs[i].title,
-                                    album: songs[i].album,
-                                    genre: songs[i].genre,
-                                    year: songs[i].year,
-                                    artistId: songs[i].artistId,
+                                    title: songs[i].title || "",
+                                    album: songs[i].album || "",
+                                    genre: songs[i].genre || "",
+                                    year: songs[i].year !== undefined && songs[i].year !== null ? String(songs[i].year) : "",
+                                    artistId: songs[i].artistId || "",
                                     artistName: songs[i].artistName || "",
-                                    fileUrl: songs[i].fileUrl
+                                    fileUrl: songs[i].fileUrl || ""
                                 })
                             }
                         } else {
@@ -422,6 +423,7 @@ ApplicationWindow {
         property string selectedArtistId: ""
         property bool isAddingArtist: false
         standardButtons: Dialog.Ok | Dialog.Cancel
+
         ListModel { id: artistModel }
 
         ScrollView {
@@ -431,7 +433,6 @@ ApplicationWindow {
                 anchors.margins: 16
                 spacing: 10
                 width: addScroll.availableWidth
-
                 TextField { id: titleField; placeholderText: "Song title"; Layout.fillWidth: true }
                 TextField { id: albumField; placeholderText: "Album"; Layout.fillWidth: true }
                 TextField { id: genreField; placeholderText: "Genre"; Layout.fillWidth: true }
@@ -476,9 +477,39 @@ ApplicationWindow {
             onAccepted: addDialog.selectedFilePath = fileDialog.selectedFile
         }
 
+        MessageDialog {
+            id: validationErrorDialog
+            title: "Invalid input"
+            text: ""
+            buttons: MessageDialog.Ok
+        }
+
         onOpened: loadArtists()
 
         onAccepted: {
+            var missing = []
+
+            if (!titleField.text.trim())
+                missing.push("Song title")
+            if (addDialog.isAddingArtist && !newArtistName.text.trim())
+                missing.push("New artist name")
+            if (!addDialog.isAddingArtist && !addDialog.selectedArtistId)
+                missing.push("Artist")
+            if (!addDialog.selectedFilePath)
+                missing.push("Audio file")
+
+            if (yearField.text.trim()) {
+                var yearVal = parseInt(yearField.text)
+                if (isNaN(yearVal) || yearVal < 1000 || yearVal > 2026)
+                    missing.push("Year must be between 1000 and 2026")
+            }
+
+            if (missing.length > 0) {
+                validationErrorDialog.text = "Please correct the following:\n• " + missing.join("\n• ")
+                validationErrorDialog.open()
+                return
+            }
+
             if (addDialog.isAddingArtist) {
                 var xhr = new XMLHttpRequest()
                 xhr.open("POST", "http://localhost:5000/api/artists")
@@ -520,13 +551,18 @@ ApplicationWindow {
         title: "Edit track"
         modal: true
         width: 550
-        height: 500
+        height: 550
         standardButtons: Dialog.Ok | Dialog.Cancel
         property string songId: ""
+        property string selectedArtistId: ""
+        property bool isAddingArtist: false
         property alias editTitleField: internalEditTitleField
         property alias editAlbumField: internalEditAlbumField
         property alias editGenreField: internalEditGenreField
         property alias editYearField: internalEditYearField
+        property string newArtistNameEdit: ""
+        property string newArtistCountryEdit: ""
+        property string newArtistGenreEdit: ""
 
         ScrollView {
             id: editScroll
@@ -540,28 +576,152 @@ ApplicationWindow {
                 TextField { id: internalEditAlbumField; placeholderText: "Album"; Layout.fillWidth: true }
                 TextField { id: internalEditGenreField; placeholderText: "Genre"; Layout.fillWidth: true }
                 TextField { id: internalEditYearField; placeholderText: "Year"; Layout.fillWidth: true }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+                    Label { text: "Artist:" }
+                    ComboBox {
+                        id: editArtistDropdown
+                        Layout.fillWidth: true
+                        textRole: "name"
+                        model: artistModel
+                        onActivated: {
+                            editDialog.selectedArtistId = artistModel.get(currentIndex).id
+                            editDialog.isAddingArtist = (editDialog.selectedArtistId === "new")
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    visible: editDialog.isAddingArtist
+                    spacing: 8
+                    TextField {
+                        placeholderText: "Artist name"
+                        Layout.fillWidth: true
+                        text: editDialog.newArtistNameEdit
+                        onTextChanged: editDialog.newArtistNameEdit = text
+                    }
+                    TextField {
+                        placeholderText: "Country"
+                        Layout.fillWidth: true
+                        text: editDialog.newArtistCountryEdit
+                        onTextChanged: editDialog.newArtistCountryEdit = text
+                    }
+                    TextField {
+                        placeholderText: "Artist genre"
+                        Layout.fillWidth: true
+                        text: editDialog.newArtistGenreEdit
+                        onTextChanged: editDialog.newArtistGenreEdit = text
+                    }
+                }
             }
         }
 
-        onAccepted: {
-            var xhr = new XMLHttpRequest();
-            xhr.open("PUT", "http://localhost:5000/api/songs/" + songId);
-            xhr.setRequestHeader("Content-Type", "application/json");
+        MessageDialog {
+            id: validationErrorDialogEdit
+            title: "Invalid input"
+            text: ""
+            buttons: MessageDialog.Ok
+        }
+
+        function sendEditRequest(finalArtistId) {
+            var xhr = new XMLHttpRequest()
+            xhr.open("PUT", "http://localhost:5000/api/songs/" + songId)
+            xhr.setRequestHeader("Content-Type", "application/json")
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                     if (stackView.currentItem && stackView.currentItem.loadSongs)
                         stackView.currentItem.loadSongs()
                 }
-            };
+            }
             xhr.send(JSON.stringify({
                 title: editTitleField.text,
                 album: editAlbumField.text,
                 genre: editGenreField.text,
-                year: editYearField.text
-            }));
+                year: editYearField.text,
+                artistId: finalArtistId
+            }))
+        }
+
+        onOpened: {
+            editDialog.isAddingArtist = false
+            editDialog.newArtistNameEdit = ""
+            editDialog.newArtistCountryEdit = ""
+            editDialog.newArtistGenreEdit = ""
+
+            var xhr = new XMLHttpRequest()
+            xhr.open("GET", "http://localhost:5000/api/artists")
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    var artists = JSON.parse(xhr.responseText)
+                    artistModel.clear()
+                    for (var i = 0; i < artists.length; i++) {
+                        artistModel.append({ id: artists[i]._id, name: artists[i].name })
+                    }
+                    artistModel.append({ id: "new", name: "+ Add new artist" })
+
+                    editDialog.selectedArtistId = editDialog.selectedArtistId || ""
+                    editArtistDropdown.currentIndex = -1
+
+                    for (var j = 0; j < artistModel.count; j++) {
+                        if (artistModel.get(j).id === editDialog.selectedArtistId) {
+                            editArtistDropdown.currentIndex = j
+                            break
+                        }
+                    }
+                }
+            }
+            xhr.send()
+        }
+
+        onAccepted: {
+            var missing = []
+
+            if (!editTitleField.text.trim())
+                missing.push("Song title")
+
+            if (editDialog.isAddingArtist) {
+                if (!editDialog.newArtistNameEdit.trim())
+                    missing.push("New artist name")
+            } else if (!editDialog.selectedArtistId) {
+                missing.push("Artist")
+            }
+
+            if (editYearField.text.trim()) {
+                var yearVal = parseInt(editYearField.text)
+                if (isNaN(yearVal) || yearVal < 1000 || yearVal > 2026)
+                    missing.push("Year must be between 1000 and 2026")
+            }
+
+            if (missing.length > 0) {
+                validationErrorDialogEdit.text = "Please correct the following:\n• " + missing.join("\n• ")
+                validationErrorDialogEdit.open()
+                return
+            }
+
+            if (editDialog.isAddingArtist) {
+                var xhrArtist = new XMLHttpRequest()
+                xhrArtist.open("POST", "http://localhost:5000/api/artists")
+                xhrArtist.setRequestHeader("Content-Type", "application/json")
+                xhrArtist.onreadystatechange = function() {
+                    if (xhrArtist.readyState === XMLHttpRequest.DONE && xhrArtist.status === 201) {
+                        var artist = JSON.parse(xhrArtist.responseText)
+                        sendEditRequest(artist._id)
+                    }
+                }
+                xhrArtist.send(JSON.stringify({
+                    name: editDialog.newArtistNameEdit,
+                    country: editDialog.newArtistCountryEdit,
+                    genre: editDialog.newArtistGenreEdit
+                }))
+            } else {
+                sendEditRequest(editDialog.selectedArtistId)
+            }
         }
     }
 
+    // dialog - delete track
     MessageDialog {
         id: confirmDeleteDialog
         title: "Delete track"
