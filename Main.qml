@@ -168,9 +168,9 @@ ApplicationWindow {
                                 color: Material.foreground
                             }
 
-                            Text { text: "Album: " + (album || "Unknown"); color: "#afafaf" }
-                            Text { text: "Artist: " + (artistName || "Unknown"); color: "#afafaf" }
-                            Text { text: "Year: " + (year || "Unknown"); color: "#afafaf" }
+                            Text { text: "Album: " + (album || "--"); color: "#afafaf" }
+                            Text { text: "Artist: " + (artistName || "--"); color: "#afafaf" }
+                            Text { text: "Year: " + (year || "--"); color: "#afafaf" }
 
                             RowLayout {
                                 Layout.fillWidth: true
@@ -248,11 +248,11 @@ ApplicationWindow {
                                     }
                                     onClicked: {
                                         stackView.push(detailsPage, {
-                                            songTitle: title,
-                                            songAlbum: album,
-                                            songArtist: artistName,
-                                            songGenre: genre,
-                                            songYear: year
+                                            songTitle: (title || "--"),
+                                            songAlbum: (album || "--"),
+                                            songArtist: (artistName || "--"),
+                                            songGenre: (genre || "--"),
+                                            songYear: (year || "--")
                                         })
                                     }
                                 }
@@ -284,10 +284,17 @@ ApplicationWindow {
             MediaPlayer {
                 id: player
                 audioOutput: AudioOutput { id: output }
-                onPositionChanged: seekSlider.value = position
-                onDurationChanged: seekSlider.to = duration
-                onMediaStatusChanged: {
-                    if (mediaStatus === MediaPlayer.EndOfMedia && isLoopEnabled) {
+
+                onPositionChanged: (pos) => {
+                    seekSlider.value = pos
+                }
+
+                onDurationChanged: (dur) => {
+                    seekSlider.to = dur
+                }
+
+                onMediaStatusChanged: (status) => {
+                    if (status === MediaPlayer.EndOfMedia && isLoopEnabled) {
                         player.position = 0
                         player.play()
                     }
@@ -484,6 +491,13 @@ ApplicationWindow {
             buttons: MessageDialog.Ok
         }
 
+        MessageDialog {
+            id: successDialogAdd
+            title: "Success"
+            text: "New track was successfully added!\nIt may take a few seconds for the song to get uploaded to the database.\nWait a few seconds and refresh."
+            buttons: MessageDialog.Ok
+        }
+
         onOpened: loadArtists()
 
         onAccepted: {
@@ -525,6 +539,7 @@ ApplicationWindow {
                             yearField.text,
                             artist._id
                         )
+                        successDialogAdd.open()
                     }
                 }
                 xhr.send(JSON.stringify({
@@ -541,6 +556,7 @@ ApplicationWindow {
                     yearField.text,
                     addDialog.selectedArtistId
                 )
+                successDialogAdd.open()
             }
         }
     }
@@ -625,12 +641,20 @@ ApplicationWindow {
             buttons: MessageDialog.Ok
         }
 
+        MessageDialog {
+            id: successDialogEdit
+            title: "Success"
+            text: "Track info was successfully updated!"
+            buttons: MessageDialog.Ok
+        }
+
         function sendEditRequest(finalArtistId) {
             var xhr = new XMLHttpRequest()
             xhr.open("PUT", "http://localhost:5000/api/songs/" + songId)
             xhr.setRequestHeader("Content-Type", "application/json")
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    successDialogEdit.open()
                     if (stackView.currentItem && stackView.currentItem.loadSongs)
                         stackView.currentItem.loadSongs()
                 }
