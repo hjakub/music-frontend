@@ -19,10 +19,6 @@ int main(int argc, char *argv[])
     SongUploader uploader;
     engine.rootContext()->setContextProperty("songUploader", &uploader);
 
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
-                     &app, []() { QCoreApplication::exit(-1); },
-                     Qt::QueuedConnection);
-
     engine.loadFromModule("music_frontend", "Main");
 
     return app.exec();
